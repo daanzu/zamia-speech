@@ -30,8 +30,12 @@ import logging
 from nltools           import misc
 from nltools.tokenizer import tokenize
 
+config = misc.load_config('.speechrc')
+speech_corpora_dir = config.get("speech", "speech_corpora")
+
 TSDIR    = 'data/src/speech/%s'
 SPK_TEST = 'data/src/speech/%s/spk_test.txt'
+UTT_TEST = '%s/%s/utt_test.txt'
 MAXLINES = 100000 # used to split up transcript.csvs
  
 class Transcripts(object):
@@ -100,6 +104,19 @@ class Transcripts(object):
             for line in f:
                 self.spk_test.add(line.strip())
 
+        utt_test_fn = UTT_TEST % (speech_corpora_dir, corpus_name)
+
+        if create_db:
+            if not os.path.exists(utt_test_fn):
+                logging.info ('creating empty %s' % utt_test_fn)
+                with codecs.open(utt_test_fn, 'w', 'utf8') as f:
+                    pass
+
+        self.utt_test = set()
+        if os.path.exists(utt_test_fn):
+            with codecs.open(utt_test_fn, 'r', 'utf8') as f:
+                for line in f:
+                    self.utt_test.add(line.strip())
 
     def keys(self):
         return self.ts.keys()
@@ -175,6 +192,8 @@ class Transcripts(object):
                 if cfn.startswith(spk):
                     is_test = True
                     break
+            if cfn in self.utt_test:
+                is_test = True
 
             if is_test:
                 ts_test[cfn]  = v

@@ -72,6 +72,8 @@ speech_corpora = config.get("speech", "speech_corpora")
 # convert mp3 to wav, in speaker directories
 #
 
+misc.mkdirs('%s/speechcommands' % (speech_corpora,))
+
 words = [
     'backward', 'bed', 'bird', 'cat', 'dog', 'down', 'eight', 'five', 'follow', 'forward',
     'four', 'go', 'happy', 'house', 'learn', 'left', 'marvin', 'nine', 'no', 'off',
@@ -79,15 +81,22 @@ words = [
     'up', 'visual', 'wow', 'yes', 'zero',
 ]
 
+with open('%s/speech_commands_v0.02/testing_list.txt' % speech_arc, 'r') as testing_listf:
+    test_paths = set(line.strip() for line in testing_listf)
+
 cnt = 0
 spk_ids = set()
-with open('tmp/run_parallel.sh', 'w') as scriptf:
+with open('tmp/run_parallel.sh', 'w') as scriptf, \
+        open('%s/speechcommands/utt_test.txt' % speech_corpora, 'w') as utt_testf:
     for word in words:
         for filepath in glob.glob(os.path.join(speech_arc, 'speech_commands_v0.02', word, '*.wav')):
             text = word
             match = re.match(r'(\w+)_nohash_(\d+).wav', os.path.basename(filepath))
             spk_id = match.group(1)
             utt_id = spk_id + '-' + word + '-' + match.group(2)
+
+            if (word + '/' + match.group(0)) in test_paths:
+                utt_testf.write('%s-v1_%s\n' % (spk_id, utt_id))
 
             if spk_id not in spk_ids:
                 misc.mkdirs('%s/speechcommands/%s-v1/etc' % (speech_corpora, spk_id))

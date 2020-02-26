@@ -71,11 +71,21 @@ speech_corpora = config.get("speech", "speech_corpora")
 # convert mp3 to wav, in speaker directories
 #
 
+misc.mkdirs('%s/cv_corpus_v3' % (speech_corpora,))
+
 cnt = 0
 spk_ids = set()
-with open('tmp/run_parallel.sh', 'w') as scriptf:
-    files = ['dev.tsv', 'other.tsv', 'test.tsv', 'train.tsv', 'validated.tsv',]:  # not 'invalidated.tsv'
-    for tsvfn in files:
+with open('tmp/run_parallel.sh', 'w') as scriptf, \
+        open('%s/cv_corpus_v3/utt_test.txt' % speech_corpora, 'w') as utt_testf:
+    files = [
+        ('train.tsv', False),
+        ('dev.tsv', False),
+        ('test.tsv', True),
+        ('validated.tsv', False),
+        # ('other.tsv', False),
+        # ('invalidated.tsv', False),
+    ]
+    for (tsvfn, is_test) in files:
         with codecs.open('%s/cv_corpus_v3/%s' % (speech_arc, tsvfn), 'r', 'utf8') as tsvf:
             reader = csv.DictReader(tsvf, dialect='excel-tab')
 
@@ -91,6 +101,9 @@ with open('tmp/run_parallel.sh', 'w') as scriptf:
 
                 if not os.path.isfile(filepath) or os.path.getsize(filepath) == 0:
                     continue
+
+                if is_test:
+                    utt_testf.write('%s-v1_%s\n' % (spk_id, utt_id))
 
                 if spk_id not in spk_ids:
                     misc.mkdirs('%s/cv_corpus_v3/%s-v1/etc' % (speech_corpora, spk_id))
